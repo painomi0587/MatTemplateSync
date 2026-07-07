@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -13,6 +14,7 @@ namespace MatTemplateSync
         public int MaterialCount;
         public int AppliedProperties;
         public int SkippedProperties;
+        public int SkippedMaterials;
     }
 
     /// <summary>
@@ -63,6 +65,52 @@ namespace MatTemplateSync
             }
 
             AssetDatabase.SaveAssets();
+            return report;
+        }
+
+        /// <summary>
+        /// 各ターゲットを複製し、複製先にテンプレートを適用する。元マテリアルは変更しない。
+        /// 複製ファイルは元と同じフォルダに "_synced" サフィックスで保存される。
+        /// </summary>
+        public static ApplyReport CopyAndApplyToMaterials(
+            Material template, IReadOnlyList<Material> targets, SyncCategory mask)
+        {
+            List<string> propertyNames = LilToonPropertyTable.CollectProperties(mask);
+            var report = new ApplyReport();
+
+            foreach (Material target in targets)
+            {
+                if (target == null) continue;
+
+                string srcPath = AssetDatabase.GetAssetPath(target);
+                if (string.IsNullOrEmpty(srcPath))
+                {
+                    report.SkippedMaterials++;
+                    continue;
+                }
+
+                string dir = Path.GetDirectoryName(srcPath).Replace('\\', '/');
+                string nameWithoutExt = Path.GetFileNameWithoutExtension(srcPath);
+                string dstPath = AssetDatabase.GenerateUniqueAssetPath(
+                    $"{dir}/{nameWithoutExt}_synced.mat");
+
+                if (!AssetDatabase.CopyAsset(srcPath, dstPath))
+                {
+                    Debug.LogWarning($"[MatTemplateSync] コピー失敗: {srcPath}");
+                    report.SkippedMaterials++;
+                    continue;
+                }
+
+                var copy = AssetDatabase.LoadAssetAtPath<Material>(dstPath);
+                if (copy == null) { report.SkippedMaterials++; continue; }
+
+                ApplyToMaterial(template, copy, propertyNames, ref report);
+                EditorUtility.SetDirty(copy);
+                report.MaterialCount++;
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
             return report;
         }
 

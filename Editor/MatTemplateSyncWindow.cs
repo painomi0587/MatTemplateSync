@@ -342,9 +342,16 @@ namespace MatTemplateSync
             bool canApply = _template != null && _targets.Count > 0 && _categoryMask != 0;
             using (new EditorGUI.DisabledScope(!canApply))
             {
-                if (GUILayout.Button($"適用 ({_targets.Count} マテリアル)", GUILayout.Height(32f)))
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    Apply();
+                    if (GUILayout.Button($"適用 ({_targets.Count})", GUILayout.Height(32f)))
+                    {
+                        Apply();
+                    }
+                    if (GUILayout.Button($"コピーして適用 ({_targets.Count})", GUILayout.Height(32f)))
+                    {
+                        CopyAndApply();
+                    }
                 }
             }
             if (!canApply)
@@ -371,6 +378,24 @@ namespace MatTemplateSync
             {
                 Debug.LogError($"[MatTemplateSync] 適用に失敗したため全対象をロールバックしました: {e}");
                 ShowMessage($"適用に失敗しました（全対象をロールバック済み）: {e.Message}", MessageType.Error);
+            }
+        }
+
+        private void CopyAndApply()
+        {
+            try
+            {
+                ApplyReport report = TemplateApplier.CopyAndApplyToMaterials(
+                    _template, _targets, (SyncCategory)_categoryMask);
+                string msg = $"{report.MaterialCount} マテリアルをコピーして適用しました（_synced サフィックスで保存）。";
+                if (report.SkippedMaterials > 0)
+                    msg += $" {report.SkippedMaterials} 件はコピーできませんでした。";
+                ShowMessage(msg, report.SkippedMaterials > 0 ? MessageType.Warning : MessageType.Info);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MatTemplateSync] コピー適用に失敗しました: {e}");
+                ShowMessage($"コピー適用に失敗しました: {e.Message}", MessageType.Error);
             }
         }
 
