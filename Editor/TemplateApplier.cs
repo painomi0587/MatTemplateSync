@@ -72,6 +72,8 @@ namespace MatTemplateSync
         /// 各ターゲットを複製し、複製先にテンプレートを適用する。元マテリアルは変更しない。
         /// 複製ファイルは元と同じフォルダに "_synced" サフィックスで保存される。
         /// copyMap に 元 → コピー のマッピングを返す（呼び元でのレンダラー差し替えに使用）。
+        /// Undo.RegisterCreatedObjectUndo で登録するため、Ctrl+Z で _synced.mat が削除される。
+        /// 呼び元が Undo グループを管理すること。
         /// </summary>
         public static ApplyReport CopyAndApplyToMaterials(
             Material template, IReadOnlyList<Material> targets, SyncCategory mask,
@@ -106,6 +108,9 @@ namespace MatTemplateSync
 
                 var copy = AssetDatabase.LoadAssetAtPath<Material>(dstPath);
                 if (copy == null) { report.SkippedMaterials++; continue; }
+
+                // 作成したアセットを Undo 対象に登録（Undo 時にディスクから削除される）
+                Undo.RegisterCreatedObjectUndo(copy, "MatTemplateSync: Copy and Apply");
 
                 ApplyToMaterial(template, copy, propertyNames, ref report);
                 EditorUtility.SetDirty(copy);
