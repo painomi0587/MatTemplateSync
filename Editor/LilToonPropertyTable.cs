@@ -29,8 +29,9 @@ namespace MatTemplateSync
     /// テーブルは「知っている全バージョンの和集合」で持ってよい —
     /// 存在しない名前は適用時の HasProperty ガードで無害にスキップされる。
     ///
-    /// テクスチャ（_MainTex, _EmissionMap, 各種 Mask 等）は意図的に含めない。
-    /// テクスチャ参照は各マテリアル個別のものを維持するのが本ツールの基本方針。
+    /// テクスチャはカテゴリ単位でオプトイン方式を取る。
+    /// MatCap テクスチャ（_MatCapTex / _MatCap2ndTex）はスタイルの本体のため含める。
+    /// メインテクスチャ・各種マスク等、個別マテリアルに依存するテクスチャは含めない。
     /// レンダーステート系（_SrcBlend/_DstBlend/_ZWrite/_Cutoff/Stencil 等）は
     /// シェーダー差し替えなしでコピーすると描画が壊れるため対象外。
     /// </summary>
@@ -148,23 +149,21 @@ namespace MatTemplateSync
                 "_ReflectionCubeOverride", "_ReflectionCubeEnableLighting",
                 "_ReflectionBlendMode",
             },
-            // MatCap はテクスチャ（_MatCapTex）が質感の本体のため、値のみの適用では
-            // 見た目が揃わないことが多い（UI で注意表示。テクスチャコピーは将来のオプトイン）
             [SyncCategory.MatCap] = new[]
             {
-                "_UseMatCap", "_MatCapColor", "_MatCapMainStrength", "_MatCapBlend",
+                "_UseMatCap", "_MatCapTex", "_MatCapColor", "_MatCapMainStrength", "_MatCapBlend",
                 "_MatCapEnableLighting", "_MatCapShadowMask", "_MatCapBackfaceMask",
                 "_MatCapLod", "_MatCapBlendMode", "_MatCapApplyTransparency",
                 "_MatCapNormalStrength", "_MatCapZRotCancel", "_MatCapPerspective",
                 "_MatCapVRParallaxStrength", "_MatCapBlendUV1",
-                "_MatCapCustomNormal", "_MatCapBumpScale",
-                "_UseMatCap2nd", "_MatCap2ndColor", "_MatCap2ndMainStrength",
+                "_MatCapCustomNormal", "_MatCapBumpMap", "_MatCapBumpScale",
+                "_UseMatCap2nd", "_MatCap2ndTex", "_MatCap2ndColor", "_MatCap2ndMainStrength",
                 "_MatCap2ndBlend", "_MatCap2ndEnableLighting", "_MatCap2ndShadowMask",
                 "_MatCap2ndBackfaceMask", "_MatCap2ndLod", "_MatCap2ndBlendMode",
                 "_MatCap2ndApplyTransparency", "_MatCap2ndNormalStrength",
                 "_MatCap2ndZRotCancel", "_MatCap2ndPerspective",
                 "_MatCap2ndVRParallaxStrength", "_MatCap2ndBlendUV1",
-                "_MatCap2ndCustomNormal", "_MatCap2ndBumpScale",
+                "_MatCap2ndCustomNormal", "_MatCap2ndBumpMap", "_MatCap2ndBumpScale",
             },
             [SyncCategory.Glitter] = new[]
             {

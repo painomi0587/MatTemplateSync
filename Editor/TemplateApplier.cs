@@ -19,8 +19,8 @@ namespace MatTemplateSync
     /// テンプレートマテリアルから対象マテリアル群へのプロパティコピー。
     ///
     /// 型はテーブルに持たせず、テンプレート側シェーダーの Shader.GetPropertyType で
-    /// 実行時解決する。テクスチャ型はここでも二重に除外される（テーブル側の除外が
-    /// 崩れても Texture プロパティが誤ってコピーされることはない）。
+    /// 実行時解決する。テクスチャコピーはテーブルに名前が載っているもの（MatCap テクスチャ等）
+    /// のみ実行される。テーブルに載っていない名前はそもそも走査されないため安全。
     ///
     /// プレビューと本適用を同一コードパスにするため、単体適用（ApplyToMaterial）は
     /// Undo や保存に関知しない純粋な変換として実装する。
@@ -102,8 +102,11 @@ namespace MatTemplateSync
                         target.SetInteger(name, template.GetInteger(name));
                         report.AppliedProperties++;
                         break;
+                    case ShaderPropertyType.Texture:
+                        target.SetTexture(name, template.GetTexture(name));
+                        report.AppliedProperties++;
+                        break;
                     default:
-                        // Texture はコピーしない（テクスチャ参照は各マテリアル個別維持）
                         report.SkippedProperties++;
                         break;
                 }
