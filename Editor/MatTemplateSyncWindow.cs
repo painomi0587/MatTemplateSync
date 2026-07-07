@@ -18,6 +18,7 @@ namespace MatTemplateSync
         // [SerializeField] によりドメインリロード（再コンパイル/Play）を跨いで自動復元される
         [SerializeField] private Material _template;
         [SerializeField] private List<Material> _targets = new List<Material>();
+        [SerializeField] private GameObject _sourceObject;
         [SerializeField] private int _categoryMask = (int)(
             SyncCategory.Shadow | SyncCategory.RimLight | SyncCategory.Lighting);
         [SerializeField] private Vector2 _scroll;
@@ -138,8 +139,7 @@ namespace MatTemplateSync
             if ((mask & SyncCategory.MatCap) != 0)
             {
                 EditorGUILayout.HelpBox(
-                    "MatCap はテクスチャ（_MatCapTex）が質感の本体のため、" +
-                    "値のみの反映では見た目が揃わない場合があります（テクスチャは個別維持されます）。",
+                    "MatCap はテクスチャ（_MatCapTex）を含むすべての設定がコピーされます。",
                     MessageType.Info);
             }
         }
@@ -167,14 +167,41 @@ namespace MatTemplateSync
                 }
             }
 
+            DrawObjectPickerSection();
             DrawDropArea();
             DrawTargetList();
+        }
+
+        private void DrawObjectPickerSection()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                _sourceObject = (GameObject)EditorGUILayout.ObjectField(
+                    _sourceObject, typeof(GameObject), allowSceneObjects: true);
+                using (new EditorGUI.DisabledScope(_sourceObject == null))
+                {
+                    if (GUILayout.Button("マテリアルを追加", GUILayout.Width(110f)))
+                    {
+                        AddMaterialsFromGameObject(_sourceObject);
+                    }
+                }
+            }
+        }
+
+        private void AddMaterialsFromGameObject(GameObject go)
+        {
+            if (go == null) return;
+            var materials = go.GetComponentsInChildren<Renderer>(includeInactive: true)
+                .SelectMany(r => r.sharedMaterials)
+                .Where(m => m != null)
+                .Distinct();
+            AddTargets(materials);
         }
 
         private void DrawDropArea()
         {
             Rect rect = GUILayoutUtility.GetRect(0f, 48f, GUILayout.ExpandWidth(true));
-            GUI.Box(rect, "ここにマテリアルをドラッグ&ドロップ", EditorStyles.helpBox);
+            GUI.Box(rect, "ここにマテリアルまたはオブジェクトをドラッグ&ドロップ", EditorStyles.helpBox);
 
             Event evt = Event.current;
             if ((evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform)
@@ -184,7 +211,16 @@ namespace MatTemplateSync
             }
 
             var materials = DragAndDrop.objectReferences.OfType<Material>().ToList();
-            bool anyValid = materials.Any(m => LilToonDetector.IsSupported(m, out _));
+            var gameObjects = DragAndDrop.objectReferences.OfType<GameObject>().ToList();
+
+            IEnumerable<Material> candidates = materials.Concat(
+                gameObjects.SelectMany(go =>
+                    go.GetComponentsInChildren<Renderer>(includeInactive: true)
+                      .SelectMany(r => r.sharedMaterials)
+                      .Where(m => m != null))
+            ).Distinct();
+
+            bool anyValid = candidates.Any(m => LilToonDetector.IsSupported(m, out _));
             // visualMode を設定しないとカーソルが「禁止」のままドロップできない
             DragAndDrop.visualMode = anyValid
                 ? DragAndDropVisualMode.Copy
@@ -196,7 +232,7 @@ namespace MatTemplateSync
                 // ドラッグ元のカーソル/結果フィードバックを不整合にすることがある）
                 if (!anyValid) return;
                 DragAndDrop.AcceptDrag();
-                AddTargets(materials);
+                AddTargets(candidates);
             }
             evt.Use();
         }
