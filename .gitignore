@@ -1,0 +1,14 @@
+# --- ADDF Framework (do not remove) ---
+.claude/commands/*.exp.md
+.claude/.turn-count
+.claude/.context-reminder-state
+.claude/logs/
+CLAUDE.local.md
+.claude/addf/Dashboard.md
+.claude/addf/Worktrees.md
+# オプショナルスキルの有効化コピー（原本は .claude/addf/optional/。sync-optional-skills.py が配置）
+.claude/commands/addf-gui-test.md
+.claude/commands/addf-annotate-grid.md
+.claude/commands/addf-clip-image.md
+.claude/agents/addf-ui-test-agent.md
+# --- /ADDF Framework ---
