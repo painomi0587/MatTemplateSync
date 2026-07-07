@@ -26,6 +26,9 @@ namespace MatTemplateSync
         private string _lastMessage;
         private MessageType _lastMessageType = MessageType.Info;
 
+        // ソースオブジェクト由来として追跡中のマテリアル（非シリアライズ・実行時キャッシュ）
+        private HashSet<Material> _trackedMaterials = new HashSet<Material>();
+
         [MenuItem("Tools/MatTemplateSync")]
         public static void Open()
         {
@@ -36,6 +39,30 @@ namespace MatTemplateSync
         private void OnEnable()
         {
             _categoryMask = EditorPrefs.GetInt(CategoryMaskPrefKey, _categoryMask);
+            Undo.undoRedoPerformed += OnUndoRedo;
+            // ドメインリロード後にソースオブジェクトが復元されていれば初期同期
+            if (_sourceObject != null) SyncFromSourceObject();
+        }
+
+        private void OnDisable()
+        {
+            Undo.undoRedoPerformed -= OnUndoRedo;
+        }
+
+        private void OnUndoRedo()
+        {
+            if (_sourceObject != null) { SyncFromSourceObject(); Repaint(); }
+        }
+
+        private void OnInspectorUpdate()
+        {
+            if (_sourceObject == null) return;
+            var current = CollectMaterialsFromObject(_sourceObject);
+            if (!current.SetEquals(_trackedMaterials))
+            {
+                SyncFromSourceObject(current);
+                Repaint();
+            }
         }
 
         private void OnGUI()
@@ -176,26 +203,67 @@ namespace MatTemplateSync
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                _sourceObject = (GameObject)EditorGUILayout.ObjectField(
+                var picked = (GameObject)EditorGUILayout.ObjectField(
                     _sourceObject, typeof(GameObject), allowSceneObjects: true);
+                if (picked != _sourceObject)
+                {
+                    _sourceObject = picked;
+                    _trackedMaterials.Clear();
+                    SyncFromSourceObject();
+                }
                 using (new EditorGUI.DisabledScope(_sourceObject == null))
                 {
-                    if (GUILayout.Button("マテリアルを追加", GUILayout.Width(110f)))
+                    if (GUILayout.Button("再同期", GUILayout.Width(60f)))
                     {
-                        AddMaterialsFromGameObject(_sourceObject);
+                        _trackedMaterials.Clear();
+                        SyncFromSourceObject();
                     }
                 }
             }
+            if (_sourceObject != null)
+            {
+                EditorGUILayout.LabelField(
+                    "オブジェクトのマテリアルを自動追跡中", EditorStyles.centeredGreyMiniLabel);
+            }
+        }
+
+        private static HashSet<Material> CollectMaterialsFromObject(GameObject go)
+        {
+            return new HashSet<Material>(
+                go.GetComponentsInChildren<Renderer>(includeInactive: true)
+                  .SelectMany(r => r.sharedMaterials)
+                  .Where(m => m != null));
         }
 
         private void AddMaterialsFromGameObject(GameObject go)
         {
             if (go == null) return;
-            var materials = go.GetComponentsInChildren<Renderer>(includeInactive: true)
-                .SelectMany(r => r.sharedMaterials)
-                .Where(m => m != null)
-                .Distinct();
-            AddTargets(materials);
+            AddTargets(CollectMaterialsFromObject(go));
+        }
+
+        /// <summary>
+        /// ソースオブジェクト由来のターゲットだけを差分更新する。
+        /// 手動追加したマテリアルはそのまま維持する。
+        /// </summary>
+        private void SyncFromSourceObject(HashSet<Material> current = null)
+        {
+            if (_sourceObject == null) { _trackedMaterials.Clear(); return; }
+
+            current ??= CollectMaterialsFromObject(_sourceObject);
+
+            // 前回追跡していたがオブジェクトから消えたものをターゲットから除去
+            _targets.RemoveAll(m => _trackedMaterials.Contains(m) && !current.Contains(m));
+
+            // 新たに追加されたものをターゲットに追加（lilToon チェック付き）
+            foreach (Material m in current)
+            {
+                if (m == null || m == _template || _targets.Contains(m)) continue;
+                if (!LilToonDetector.IsSupported(m, out _)) continue;
+                _targets.Add(m);
+            }
+
+            _trackedMaterials = current;
+            AssetPreview.SetPreviewTextureCacheSize(Mathf.Max(64, _targets.Count + 32));
         }
 
         private void DrawDropArea()
