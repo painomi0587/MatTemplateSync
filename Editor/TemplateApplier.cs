@@ -71,12 +71,15 @@ namespace MatTemplateSync
         /// <summary>
         /// 各ターゲットを複製し、複製先にテンプレートを適用する。元マテリアルは変更しない。
         /// 複製ファイルは元と同じフォルダに "_synced" サフィックスで保存される。
+        /// copyMap に 元 → コピー のマッピングを返す（呼び元でのレンダラー差し替えに使用）。
         /// </summary>
         public static ApplyReport CopyAndApplyToMaterials(
-            Material template, IReadOnlyList<Material> targets, SyncCategory mask)
+            Material template, IReadOnlyList<Material> targets, SyncCategory mask,
+            out Dictionary<Material, Material> copyMap)
         {
             List<string> propertyNames = LilToonPropertyTable.CollectProperties(mask);
             var report = new ApplyReport();
+            copyMap = new Dictionary<Material, Material>();
 
             foreach (Material target in targets)
             {
@@ -106,6 +109,7 @@ namespace MatTemplateSync
 
                 ApplyToMaterial(template, copy, propertyNames, ref report);
                 EditorUtility.SetDirty(copy);
+                copyMap[target] = copy;
                 report.MaterialCount++;
             }
 

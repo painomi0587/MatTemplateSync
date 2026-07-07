@@ -454,8 +454,14 @@ namespace MatTemplateSync
             try
             {
                 ApplyReport report = TemplateApplier.CopyAndApplyToMaterials(
-                    _template, _targets, (SyncCategory)_categoryMask);
+                    _template, _targets, (SyncCategory)_categoryMask, out var copyMap);
+
+                if (_sourceObject != null && copyMap.Count > 0)
+                    ReplaceOnSourceObject(copyMap);
+
                 string msg = $"{report.MaterialCount} マテリアルをコピーして適用しました（_synced サフィックスで保存）。";
+                if (_sourceObject != null && copyMap.Count > 0)
+                    msg += " オブジェクトのマテリアルスロットを差し替えました。";
                 if (report.SkippedMaterials > 0)
                     msg += $" {report.SkippedMaterials} 件はコピーできませんでした。";
                 ShowMessage(msg, report.SkippedMaterials > 0 ? MessageType.Warning : MessageType.Info);
@@ -465,6 +471,36 @@ namespace MatTemplateSync
                 Debug.LogError($"[MatTemplateSync] コピー適用に失敗しました: {e}");
                 ShowMessage($"コピー適用に失敗しました: {e.Message}", MessageType.Error);
             }
+        }
+
+        private void ReplaceOnSourceObject(Dictionary<Material, Material> copyMap)
+        {
+            Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName("MatTemplateSync: Replace Materials");
+            int undoGroup = Undo.GetCurrentGroup();
+
+            foreach (Renderer r in _sourceObject.GetComponentsInChildren<Renderer>(includeInactive: true))
+            {
+                Material[] mats = r.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] != null && copyMap.TryGetValue(mats[i], out Material copy))
+                    {
+                        mats[i] = copy;
+                        changed = true;
+                    }
+                }
+                if (!changed) continue;
+                Undo.RecordObject(r, "MatTemplateSync: Replace Materials");
+                r.sharedMaterials = mats;
+                EditorUtility.SetDirty(r);
+            }
+
+            Undo.CollapseUndoOperations(undoGroup);
+
+            // 追跡キャッシュをコピー後の状態に更新
+            _trackedMaterials = CollectMaterialsFromObject(_sourceObject);
         }
 
         private void ShowMessage(string message, MessageType type)
