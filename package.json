@@ -1,0 +1,16 @@
+{
+  "name": "com.painomi.mat-template-sync",
+  "displayName": "MatTemplateSync",
+  "version": "0.1.0",
+  "unity": "2022.3",
+  "description": "lilToon material template batch-apply tool. Pick one lilToon material as a template and copy selected property categories (shadow, rim, outline, emission, ...) to multiple materials at once. Texture references are kept per-material; only colors and numeric values are synced.",
+  "author": {
+    "name": "painomi"
+  },
+  "keywords": [
+    "liltoon",
+    "material",
+    "editor",
+    "vrchat"
+  ]
+}
