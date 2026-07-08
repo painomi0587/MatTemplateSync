@@ -8,6 +8,9 @@
 
 - [Plan 0001: v0.1 実機検証と修正](0001-v01-verification.md) — 前提
 - [Plan 0002: v0.2 ユーザビリティ改善](0002-v02-usability.md) — 前提（バリアント警告 UI を流用）
+- [Plan 0005: PropertyTable 型付け・コピー計画の純関数化・テスト骨格](0005-testability-structure.md) — 項目3（Window 状態モデル分離）は本 Plan フェーズ1 と同時実施でもよい
+- [Plan 0006: スタイルプリセットライブラリ](0006-style-preset-library.md) — プリセット適用も本 Plan のプレビューと同一コードパスに乗せる
+- [Plan 0010: カラーバリエーション一括生成](0010-color-variation-generator.md) — 同上（同一プレビューコードパス前提の検討スタブ）
 
 ## 目的
 

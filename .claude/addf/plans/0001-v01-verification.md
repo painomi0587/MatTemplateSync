@@ -8,6 +8,7 @@
 
 - [Plan 0002: v0.2 ユーザビリティ改善](0002-v02-usability.md) — 本 Plan の検証結果を前提とする後続
 - [Plan 0003: v0.3 Before/After プレビュー](0003-v03-preview.md) — 同上
+- [Plan 0004: Undo トランザクション統合とテクスチャ null 潰し防止](0004-undo-transaction-hardening.md) — 実機確認項目（途中失敗巻き戻し・MatCap 未使用テンプレート適用・RegisterCreatedObjectUndo の Undo 挙動）を本 Plan の確認リストに追加する
 
 ## 目的
 

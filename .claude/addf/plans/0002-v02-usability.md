@@ -8,6 +8,10 @@
 
 - [Plan 0001: v0.1 実機検証と修正](0001-v01-verification.md) — 前提（検証完了後に着手）
 - [Plan 0003: v0.3 Before/After プレビュー](0003-v03-preview.md) — 後続
+- [Plan 0004: Undo トランザクション統合とテクスチャ null 潰し防止](0004-undo-transaction-hardening.md) — 項目1 の「非 null のみコピー」原則を先行適用する（本 Plan より前に実施）
+- [Plan 0005: PropertyTable 型付け・コピー計画の純関数化・テスト骨格](0005-testability-structure.md) — 項目1（テクスチャオプトイン UI）の前提構造。本 Plan 直前の実施を推奨
+- [Plan 0007: 同期リンクと再適用](0007-sync-links-reapply.md) — 本 Plan のドライランレポート UI を流用する後続
+- [Plan 0011: 対象リストのグルーピング・検索フィルタ](0011-target-list-grouping.md) — サムネイルリスト強化と同時実施の候補
 
 ## 目的
 
