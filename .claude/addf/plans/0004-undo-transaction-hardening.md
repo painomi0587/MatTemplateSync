@@ -8,6 +8,7 @@
 
 - [Plan 0001: v0.1 実機検証と修正](0001-v01-verification.md) — 本 Plan の検証項目（途中失敗巻き戻し・MatCap 未使用テンプレート適用）を実機確認リストに追加する
 - [Plan 0002: v0.2 ユーザビリティ改善](0002-v02-usability.md) — 項目1（テクスチャオプトイン）の前提となる null 非コピー原則を先行適用する
+- [Plan 0005: PropertyTable 型付け・コピー計画の純関数化・テスト骨格](0005-testability-structure.md) — 本 Plan の構造（Applier への Undo 集約）を前提として利用する後続
 
 ## 目的
 
@@ -31,7 +32,8 @@ v0.2 着手前に必須の堅牢化。
    `GetTextureScale/Offset` の同時コピーも未実装。
 3. **小粒の非対称・非効率**（候補6）:
    - `TemplateApplier.ApplyToMaterials`（36-44行）に `template` の null ガードがない
-   - null ターゲットが `SkippedMaterials` に計上されず黙って抜ける（51行。`CopyAndApplyToMaterials` 88行と非対称）
+   - null ターゲットが `SkippedMaterials` に計上されず黙って抜ける（51行。`CopyAndApplyToMaterials` も
+     88行では同様に計上漏れだが、91-95行・102-107行の他スキップ理由は計上されており内部で不統一）
    - `MatTemplateSyncWindow.DrawDropArea` の `candidates` が遅延 LINQ のまま二重列挙され
      `GetComponentsInChildren` が2回走る（284-303行）
    - `OnInspectorUpdate`（57-66行）が毎回 `HashSet` を新規構築
@@ -55,6 +57,12 @@ v0.2 着手前に必須の堅牢化。
 - **対象**: `CLAUDE.repo.md` — 不変条件「テクスチャ…はコピーしない」を
   「テーブルに明示的にオプトインされたテクスチャ（MatCap 等）を除き」と追記修正する
   （テーブルの意図的な MatCap 搭載と字面上矛盾しており、将来のエージェントが誤修正する温床のため）
+- **対象**: `Documentation~/DESIGN.md` §2 — 「Texture はここでも二重に除外される」（36行付近）は
+  実コード（`TemplateApplier.cs:162-165` の `case ShaderPropertyType.Texture:`）と矛盾している。
+  「Texture はテーブルに明示的に載っているもの（MatCap 系）のみコピーされる。それ以外は
+  テーブルに名前がないため走査されない」に修正する
+- **注記**: `CHANGELOG.md:13` の「テクスチャ・レンダーステート系プロパティの除外設計」にも
+  同種の表現があるが、CHANGELOG は履歴記録のため変更しない（後続エージェントへの予防線として明記）
 
 ### 項目3: ガード節・レポート計上・微細効率の統一
 
@@ -66,7 +74,7 @@ v0.2 着手前に必須の堅牢化。
 
 ## 影響範囲
 
-- `Editor/TemplateApplier.cs` / `Editor/MatTemplateSyncWindow.cs` / `CLAUDE.repo.md`
+- `Editor/TemplateApplier.cs` / `Editor/MatTemplateSyncWindow.cs` / `CLAUDE.repo.md` / `Documentation~/DESIGN.md`
 - 公開 API（`CopyAndApplyToMaterials` のシグネチャ）が変わる可能性がある（現状呼び出し元は Window のみ）
 
 ## テスト方針
@@ -89,6 +97,7 @@ v0.2 着手前に必須の堅牢化。
 
 - [ ] `CopyAndApplyToMaterials` 途中失敗時に Undo revert が実行される構造になっている
 - [ ] テクスチャコピーが非 null 限定 + Scale/Offset 同時コピーになっている
+- [ ] `CLAUDE.repo.md` と `Documentation~/DESIGN.md` §2 のテクスチャ除外記述が実装と整合している
 - [ ] addf-code-review-agent のレビューで Critical/High 指摘なし
 - [ ] Plan 0001 に実機確認項目が追記されている <!-- human-judgment -->
 

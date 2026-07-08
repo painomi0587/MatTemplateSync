@@ -9,6 +9,7 @@
 - [Plan 0002: v0.2 ユーザビリティ改善](0002-v02-usability.md) — 前提（`_lilToonVersion` 齟齬警告・null 非コピー原則を流用）
 - [Plan 0003: v0.3 Before/After プレビュー](0003-v03-preview.md) — 前提（プリセット適用も同一プレビューコードパスに乗せる）
 - [Plan 0007: 同期リンクと再適用](0007-sync-links-reapply.md) — 本 Plan の `IPropertySource` 抽象化が共通基盤になる
+- [Plan 0008: プロパティ単位の詳細選択](0008-per-property-selection.md) / [Plan 0009: マルチテンプレート合成](0009-multi-template-composition.md) — 検討スタブ。本 Plan 実装後に相乗効果がある
 
 ## 目的
 
